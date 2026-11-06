@@ -1,0 +1,8 @@
+# 运行产物
+*.png
+!docs/*.png
+
+# 编辑器
+.DS_Store
+.idea/
+.vscode/
