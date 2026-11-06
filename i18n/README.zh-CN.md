@@ -18,7 +18,7 @@
 </p>
 
 <p align="center">
-  <sub><a href="../README.md">English</a> &middot; <a href="README.ja.md">日本語</a></sub>
+  <sub><a href="../README.md">English</a> &middot; <a href="README.ja.md">日本語</a> &middot; <a href="README.ko.md">한국어</a> &middot; <a href="README.fr.md">Français</a> &middot; <a href="README.ru.md">Русский</a></sub>
 </p>
 
 ---
