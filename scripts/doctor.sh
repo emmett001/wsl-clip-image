@@ -3,7 +3,7 @@
 # 退出码：0 通；1 有故障
 set -uo pipefail
 
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 PS1="$HERE/windows-clip.ps1"
 FIX=0
 [ "${1:-}" = "--fix" ] && FIX=1

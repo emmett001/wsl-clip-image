@@ -7,7 +7,7 @@
 # 退出码：0 成功；1 剪贴板无图；2 环境不可用（interop / 无 powershell）
 set -uo pipefail
 
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 PS1="$HERE/windows-clip.ps1"
 
 OUT=""
