@@ -89,3 +89,45 @@ image: none
 判断方法：截图完成后立刻跑 `windows-clip.ps1 -Action formats`。
 `image:` 为 `none` 就是没截到位图（或热键被别的程序接管），
 不是脚本的问题。改微信截图热键，或退出抢键的程序。
+
+## 性能：wl-paste 快路径（2026-11-06 实测）
+
+装 `wl-clipboard` 后，WSLg 的 Wayland 桥**能**给出位图：
+
+```bash
+$ wl-paste --list-types
+image/bmp
+$ wl-paste --type image/bmp --no-newline | wc -c
+7833666          # 1920x1020 @32bpp
+```
+
+同一张 1920x1020 截图，pi 的 `readClipboardImage()` 连续 5 次：
+
+```
+run1 image/png 45702B 116ms
+run2 image/png 45702B 100ms
+run3 image/png 45702B  95ms
+run4 image/png 45702B  99ms
+run5 image/png 45702B 125ms
+```
+
+装之前走 PowerShell 时同一测试是 1709 ms。差约 17 倍。
+
+pi 的转换逻辑（`dist/utils/clipboard-image.js`）：
+
+```js
+// Convert unsupported formats (e.g., Windows DIB data wrapped as BMP) to PNG
+if (!isSupportedImageMimeType(image.mimeType)) {
+    const pngBytes = await convertToPng(image.bytes);   // Photon
+    ...
+}
+```
+
+`image/bmp` 不在 pi 的直通白名单（png/jpeg/webp/gif），所以每次都走 Photon 转码，
+这也是 7.8 MB 传输之外的第二笔开销。
+
+桥的已知不完美：
+
+- 即使剪贴板同时有 `image/png`，桥也只报 `image/bmp`。
+- 极少数情况下报 `image/bmp` 但 `wl-paste` 输出 0 字节（延迟渲染的 HBITMAP 跨进程失效）。
+  pi 此时退回 PowerShell；`grab.sh` 也会 fallback，所以不必处理。

@@ -56,18 +56,35 @@ scripts/doctor.sh --fix
 
 ## 通道原理
 
+两条路径，快的先试：
+
 ```
-WSL 进程
-  │  grab.sh
-  ├─ 检查 /proc/sys/fs/binfmt_misc/WSLInterop
-  ├─ cd /                    ← 深目录下 exe 起不来（\\wsl.localhost\ 超 260 字符）
-  └─ powershell.exe -STA -File windows-clip.ps1 -Action image
-        ├─ 优先取剪贴板 'PNG' 原始字节（无损、保真）
-        └─ 退化到 Clipboard::GetImage() 存 PNG
+grab.sh
+  │
+  ├─ 快路径 (~0.1s)：wl-paste --list-types
+  │       ├─ image/png → 原始字节直接落盘
+  │       ├─ image/bmp → convert bmp:- png:（需 ImageMagick）
+  │       └─ 只有文本 → 转慢路径
+  │
+  └─ 慢路径 (~0.7-1.7s)：powershell.exe -STA -File windows-clip.ps1
+          ├─ 检查 /proc/sys/fs/binfmt_misc/WSLInterop
+          ├─ cd /          ← 深目录下 exe 起不来（\\wsl.localhost\ 超 260 字符）
+          ├─ 剪贴板 'PNG' 原始字节优先（无损）
+          └─ 退化到 Clipboard::GetImage() 存 PNG
 ```
 
-WSL 侧 `wl-paste` / `xclip` **读不到 Windows 截图的位图**，只能读文本。
-图片一律走 PowerShell 这条通道，所以它断了就等于全断。
+WSLg 的 Wayland 桥**能**给位图，但只报 `image/bmp`（1920x1020 约 7.8 MB）。
+`xclip`（X11 侧）只能看到文本，拿不到位图。
+
+实测耗时（1920x1020 全屏截图，同机）：
+
+| 路径 | 耗时 | 条件 |
+|-|-|-|
+| wl-paste + Photon（pi 内部） | 82–125 ms | 装 `wl-clipboard` |
+| wl-paste + ImageMagick（grab.sh） | 210 ms | 再装 `imagemagick` |
+| PowerShell | 660–1709 ms | 无 `wl-clipboard` |
+
+所以 **`wl-clipboard` 是性能关键，不是可选项**：差 5–17 倍。
 
 ## 故障：interop 丢了
 
@@ -95,6 +112,10 @@ scripts/doctor.sh --fix
 
 | 坑 | 规避 |
 |-|-|
+| 无 `wl-clipboard` 时粘贴要 1.7s，感觉像卡住 | `sudo apt install -y wl-clipboard`，降到 ~0.1s |
+| WSLg 桥只报 `image/bmp`，一个 1920x1020 图要传 7.8 MB | 正常现象；pi 用 Photon 转 PNG，grab.sh 用 ImageMagick |
+| 桥偶尔报 `image/bmp` 但数据 0 字节 | 退回 PowerShell 即可；`grab.sh` 自动 fallback |
+| 剪贴板里的图会“过期”（提供者退出后消失） | 每次粘贴前重新截图；脚本会报 `剪贴板里没有图片` |
 | `windows-clip.ps1` 存成无 BOM 的 UTF-8，PS 5.1 按 GBK 读中文，全篇语法错 | 文件保持 UTF-8 with BOM |
 | PowerShell 输出中文乱码 | 脚本内设 `[Console]::OutputEncoding` 为 UTF-8；面向 WSL 的输出只用 ASCII |
 | 从深目录启动 `powershell.exe` 失败 | 先 `cd /` |

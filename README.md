@@ -54,9 +54,23 @@ references/interop-unit.md      interop 开机自检单元
 
 ## 依赖
 
-- WSL2，Windows PowerShell 5.1（`powershell.exe` 在 PATH 里）
-- WSL 侧 `wslpath`（默认自带）
-- 无第三方包
+| 组件 | 必需 | 用途 |
+|-|-|-|
+| WSL2 | 是 | 运行环境 |
+| Windows PowerShell 5.1 | 是 | 慢路径读剪贴板；`powershell.exe` 在 PATH 里 |
+| `wslpath` | 是 | 路径转换，WSL 自带 |
+| `wl-clipboard` | 强烈建议 | 快路径，`sudo apt install -y wl-clipboard` |
+| `imagemagick` | 可选 | `grab.sh` 把桥给的 `image/bmp` 转 PNG |
+
+耗时实测（1920x1020 截图）：
+
+| 路径 | 耗时 |
+|-|-|
+| `wl-paste` + Photon（pi 内部粘贴） | 82–125 ms |
+| `wl-paste` + ImageMagick（`grab.sh`） | 210 ms |
+| 无 `wl-clipboard`，走 PowerShell | 660–1709 ms |
+
+WSLg 的 Wayland 桥只提供 `image/bmp`，`xclip` 只能看到文本。
 
 `windows-clip.ps1` 必须保持 **UTF-8 with BOM**，否则 PowerShell 5.1 按 GBK 解析中文并报语法错。
 

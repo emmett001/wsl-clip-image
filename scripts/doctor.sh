@@ -41,14 +41,20 @@ else
   bad "无法执行；症状为 cannot execute binary file: Exec format error"
 fi
 
-echo "== 3. WSL 侧剪贴板工具（只影响文本，图片一定走 PowerShell）=="
-for t in wl-paste xclip xsel; do
-  if command -v "$t" >/dev/null; then
-    ok "$t 已安装"
-  else
-    note "$t 未安装（不影响读图）"
-  fi
-done
+echo "== 3. WSL 侧剪贴板工具 =="
+if command -v wl-paste >/dev/null; then
+  TYPES_WL="$(timeout 3 wl-paste --list-types 2>/dev/null | tr '\n' ' ')"
+  case "$TYPES_WL" in
+    *image/*) ok "wl-paste 已装，快路径可用（~0.1s）：${TYPES_WL}" ;;
+    *) note "wl-paste 已装但剪贴板无位图：${TYPES_WL:-<空>}" ;;
+  esac
+else
+  note "wl-paste 未装 → 只能走慢路径（~0.7-1.7s）"
+  note "安装：sudo apt install -y wl-clipboard（约快 5-15 倍）"
+fi
+for t in xclip xsel; do
+  command -v "$t" >/dev/null && ok "$t 已安装（只读文本）" || note "$t 未安装（只读文本，不影响读图）"
+ done
 if command -v xclip >/dev/null; then
   TYPES="$(timeout 3 xclip -selection clipboard -t TARGETS -o 2>/dev/null | tr '\n' ' ')"
   note "X11 剪贴板类型：${TYPES:-<空>}"
@@ -65,6 +71,15 @@ if [ "$PROBLEMS" -eq 0 ]; then
     *) bad "取图失败：$RESULT" ;;
   esac
   rm -f /tmp/wslclip-doctor.png
+  if command -v wl-paste >/dev/null || [ -e /proc/sys/fs/binfmt_misc/WSLInterop ]; then
+    T0=$(date +%s%N)
+    GRAB_OUT="$("$(dirname "$HERE")/scripts/grab.sh" 2>/dev/null)"
+    T1=$(date +%s%N)
+    if [ -n "$GRAB_OUT" ]; then
+      note "实际取图耗时：$(( (T1 - T0) / 1000000 )) ms"
+      rm -f "$GRAB_OUT"
+    fi
+  fi
 else
   note "跳过：interop 不通时读不到"
 fi
