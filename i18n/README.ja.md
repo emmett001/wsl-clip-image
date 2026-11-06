@@ -18,7 +18,11 @@
 </p>
 
 <p align="center">
-  <sub><a href="../README.md">English</a> &middot; <a href="README.zh-CN.md">简体中文</a> &middot; <a href="README.ko.md">한국어</a> &middot; <a href="README.fr.md">Français</a> &middot; <a href="README.ru.md">Русский</a></sub>
+  <img src="../assets/hero.png" width="880" alt="Before: Alt+A, File Transfer, Copy, Ctrl+V. After: Alt+A, Alt+V. Output: /tmp/pi-clipboard-....png">
+</p>
+
+<p align="center">
+  <sub><a href="../README.md">English</a> &middot; <a href="README.zh-CN.md">简体中文</a> &middot; <a href="README.zh-TW.md">繁體中文</a> &middot; <a href="README.ko.md">한국어</a> &middot; <a href="README.fr.md">Français</a> &middot; <a href="README.pt-BR.md">Português</a> &middot; <a href="README.ru.md">Русский</a></sub>
 </p>
 
 ---
